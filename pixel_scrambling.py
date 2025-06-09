@@ -66,19 +66,24 @@ def radial_average(power_spectrum):
     # Normalize to get the mean
     radial_mean /= np.where(counts == 0, 1, counts)
 
-    return radial_mean
+    return [radial_mean, x, nx]
 
 
 
 # Load image
 
-img = iio.imread('M6765_3610 YFP_chaotic pattern (1) (1).tif')[170]
+#img = iio.imread('BS3610 3min faster scanning.tif')[170]
+#img = iio.imread('3610 YFP larger wells #2.tif')[100]
+#img = iio.imread('3610 YFP in larger wells_tiff.tif')[100]
+img = iio.imread('3610 YFP in larger wells + 200mM K+_tiff.tif')[100] 
+
 #img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
  # Convert from BGR to RGB
 
 # take the power spectrum of original image
 power_spectrum = compute_power_spectrum(img)
-radial_profile = radial_average(power_spectrum)
+output_of = radial_average(power_spectrum)
+radial_profile = output_of[0]
 radial_profiles = [] 
 
 rep=10 # number of replicates
@@ -96,7 +101,7 @@ for i in range(rep):
     
     # take the power spectrum of scrambled image
     scram = compute_power_spectrum(scrambled)
-    radial_profile_scram = radial_average(scram)
+    radial_profile_scram = radial_average(scram)[0]
     
     
     # Store the radial profile for this replicate
@@ -110,23 +115,44 @@ radial_profiles = np.array(radial_profiles)
 mean_power_spectrum = radial_profiles.mean(axis=0)
 std_dev_power_spectrum = radial_profiles.std(axis=0)
 
-# Display
-plt.imshow(img)
+
+
+
+# Display # try to see this better!!!!!!!!!!!!! TO DO !!!!!!
+#plt.imshow(img)
+image0_eq = exposure.equalize_hist(img) 
+plt.imshow(image0_eq)
 plt.title('Original Image')
 plt.axis('off')
 plt.show()
 
 # Display
-plt.imshow(scrambled)
+plt.imshow(exposure.equalize_hist(scrambled))
 plt.title('Scrambled Image')
 plt.axis('off')
 plt.show()
 
+
+
+
+
+
+# length of radial_m,ean
+#output_of[1] # array([-1230, -1229, -1228, ...,  1227,  1228,  1229])
+ #output_of[2]
+length = len(radial_profile_scram)#2460 technically we should cut off the power spectrum at 2460/2
+x = np.arange(length)
+sr = 1/ 2.486
+T = length / sr 
+freq = x/T
+
+
+
 # Plot the radial average of a single frame
 plt.figure()
-plt.plot(radial_profile, label="Original")
-plt.plot(mean_power_spectrum, label="Scrambled average")
-plt.xlabel("Radius")
+plt.plot(freq, radial_profile, label="Original")
+plt.plot(freq, mean_power_spectrum, label="Scrambled average")
+plt.xlabel("Frequencey in 1/micrometers")
 plt.ylabel("Power Spectrum Average")
 plt.title("Radial Average of Power Spectrum")
 #plt.xlim(-50,550)
@@ -134,11 +160,19 @@ plt.yscale("log")
 plt.legend()
 plt.show()
 
+
+
+
+
+
+
+
 # Plot the radial average of a single frame with error bars for standard deviation
 plt.figure()
-plt.plot(radial_profile, label="Original")
-plt.errorbar(np.arange(len(mean_power_spectrum)), mean_power_spectrum, yerr=std_dev_power_spectrum, label="Scrambled average",  capsize=3)
-plt.xlabel("Radius")
+plt.plot(freq, radial_profile, label="Original")
+#plt.errorbar(np.arange(len(mean_power_spectrum)), mean_power_spectrum, yerr=std_dev_power_spectrum, label="Scrambled average",  capsize=3)
+plt.errorbar(freq, mean_power_spectrum, yerr=std_dev_power_spectrum, label="Scrambled average",  capsize=3)
+plt.xlabel("Frequencey in 1/micrometers")
 plt.ylabel("Power Spectrum Average")
 plt.title("Radial Average of Power Spectrum with Standard Deviation")
 plt.yscale("log")
